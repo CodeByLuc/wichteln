@@ -1,0 +1,648 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Wichtel-Wunschzettel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gloock&family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: header with budget stamp; full-width draw band; two columns (my list | everyone's lists), stacking on phones */
+:root{
+  --bg:#eef2f1; --paper:#ffffff; --ink:#173a33; --muted:#4c625c; --line:#d3dedb;
+  --accent:#b3263e; --accent-soft:#f6e3e6; --fir:#1f5a4c; --fir-soft:#dcebe6; --warn:#9a5b00;
+  --band:#173a33; --band-ink:#eef2f1; --band-muted:#a9c3bc; --on-accent:#ffffff;
+  --display:"Gloock",Georgia,"Times New Roman",serif;
+  --body:"Instrument Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Consolas,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#0f1b19; --paper:#162622; --ink:#e3ece9; --muted:#93aaa4; --line:#2a3f3a;
+  --accent:#ec6a80; --accent-soft:#3a1c22; --fir:#7cc5ae; --fir-soft:#1c3530; --warn:#e8b45a;
+  --band:#1d332e; --band-ink:#e3ece9; --band-muted:#93aaa4; --on-accent:#2a0910; color-scheme:dark}}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{background:var(--bg);color:var(--ink);font:16px/1.5 var(--body);margin:0}
+.wrap{max-width:1120px;margin:0 auto;padding-block:32px 64px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+header{display:flex;flex-wrap:wrap;gap:20px;align-items:flex-end;justify-content:space-between;margin-bottom:24px}
+.eyebrow{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--fir);font-weight:600;margin:0 0 6px}
+h1{font:400 clamp(2.2rem,6vw,3.6rem)/1.02 var(--display);margin:0;text-wrap:balance}
+h1 em{font-style:normal;color:var(--accent)}
+.lede{max-width:60ch;color:var(--muted);margin:10px 0 0}
+.stamp{border:2px dashed var(--accent);border-radius:10px;padding:10px 16px;transform:rotate(-2deg);text-align:center;color:var(--accent);flex:none}
+.stamp b{display:block;font:500 1.35rem/1.1 var(--mono)}
+.stamp span{font-size:12px;letter-spacing:.1em;text-transform:uppercase}
+.userbar{display:flex;gap:10px;align-items:center;justify-content:flex-end;flex-wrap:wrap;font-size:14px;color:var(--muted);margin-bottom:12px}
+.userbar b{color:var(--ink)}
+
+.draw{background:var(--band);color:var(--band-ink);border-radius:16px;padding:22px 24px;margin-bottom:28px;display:flex;flex-wrap:wrap;gap:18px 28px;align-items:center}
+.draw .when{flex:none;text-align:center;min-width:110px}
+.draw .when b{display:block;font:400 2.6rem/1 var(--display)}
+.draw .when span{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--band-muted)}
+.draw .body{flex:1 1 320px;min-width:0}
+.draw h2{font:400 1.5rem/1.2 var(--display);margin:0 0 4px;color:var(--band-ink)}
+.draw p{margin:0;color:var(--band-muted);max-width:62ch}
+.draw .ctl{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.draw .btn.ghost{color:var(--band-ink);border-color:var(--band-muted)}
+.draw .btn.ghost:hover{border-color:var(--band-ink);color:var(--band-ink)}
+.reveal{margin-bottom:28px}
+.reveal .card{border:2px solid var(--accent)}
+.reveal .kicker{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);font-weight:700;margin:0 0 2px}
+.unlock{display:flex;gap:10px;flex-wrap:wrap;align-items:end;max-width:520px}
+.unlock .field{flex:1 1 220px;margin:0}
+
+.grid{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:28px;align-items:start}
+@media (max-width:860px){.grid{grid-template-columns:minmax(0,1fr)}}
+h2{font:400 1.6rem/1.2 var(--display);margin:0}
+.panel{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:22px}
+.panel-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+label{display:block;font-size:13px;font-weight:600;margin-bottom:4px}
+input{width:100%;font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:9px 11px}
+input:disabled{opacity:.6}
+input:focus-visible,button:focus-visible,a:focus-visible{outline:2px solid var(--fir);outline-offset:2px}
+input[aria-invalid="true"]{border-color:var(--accent)}
+.field{margin-bottom:16px}
+.wishes{display:flex;flex-direction:column;gap:12px;margin-bottom:12px}
+.wish{border:1px solid var(--line);border-radius:10px;padding:12px;display:grid;grid-template-columns:28px minmax(0,1fr) 92px auto;gap:8px 10px;align-items:center}
+.wish .num{font:500 13px var(--mono);color:var(--muted);text-align:center}
+.wish .link{grid-column:2 / 5}
+.wish .price{position:relative}
+.wish .price input{padding-right:40px;text-align:right;font-family:var(--mono);font-size:14px}
+.wish .price::after{content:"CHF";position:absolute;right:9px;top:50%;transform:translateY(-50%);font:500 11px var(--mono);color:var(--muted)}
+.wish .hint{grid-column:2 / 5;font-size:12px;color:var(--warn);margin:-2px 0 0}
+@media (max-width:460px){.wish{grid-template-columns:22px minmax(0,1fr) auto}.wish .price{grid-column:2}.wish .link,.wish .hint{grid-column:2 / 4}}
+.iconbtn{border:0;background:none;color:var(--muted);font-size:20px;line-height:1;width:32px;height:32px;border-radius:8px;cursor:pointer}
+.iconbtn:hover{background:var(--accent-soft);color:var(--accent)}
+.iconbtn:disabled{visibility:hidden}
+.btn{font:600 15px var(--body);border-radius:9px;padding:10px 18px;cursor:pointer;border:1px solid transparent}
+.btn.primary{background:var(--accent);color:var(--on-accent)}
+.btn.primary:hover{filter:brightness(1.08)}
+.btn.ghost{background:none;border-color:var(--line);color:var(--ink)}
+.btn.ghost:hover{border-color:var(--fir);color:var(--fir)}
+.btn.small{font-size:13px;padding:6px 12px}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:18px}
+.msg{font-size:14px;margin:12px 0 0;min-height:1.4em}
+.msg.ok{color:var(--fir)} .msg.err{color:var(--accent)}
+.note{background:var(--fir-soft);color:var(--ink);border-radius:10px;padding:12px 14px;font-size:14px;margin-bottom:16px}
+.note.alert{background:var(--accent-soft)}
+.count{font:500 13px var(--mono);color:var(--muted)}
+.list{display:flex;flex-direction:column;gap:14px}
+.card{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:16px 18px}
+.card.me{border-color:var(--fir)}
+.card-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px}
+.card-head h3{font:400 1.3rem/1.2 var(--display);margin:0;min-width:0;overflow-wrap:anywhere}
+.reveal .card-head h3{font-size:2rem}
+.chip{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:2px 8px;border-radius:99px;background:var(--fir-soft);color:var(--fir)}
+.card-head .tools{margin-left:auto;display:flex;gap:6px}
+.card ol{margin:0;padding:0;list-style:none;display:flex;flex-direction:column}
+.card li{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 12px;padding:8px 0;border-top:1px dashed var(--line)}
+.card li:first-child{border-top:0}
+.card li .t{font-weight:600;overflow-wrap:anywhere}
+.card li a.t{color:var(--ink);text-decoration:underline;text-decoration-color:var(--accent);text-underline-offset:3px}
+.card li a.t:hover{color:var(--accent)}
+.card li .p{font:500 13px var(--mono);color:var(--muted);white-space:nowrap;align-self:start;padding-top:2px}
+.card li .d{grid-column:1;font-size:12px;color:var(--muted);overflow-wrap:anywhere}
+.empty{border:2px dashed var(--line);border-radius:14px;padding:28px;text-align:center;color:var(--muted)}
+.empty b{display:block;font:400 1.3rem var(--display);color:var(--ink);margin-bottom:4px}
+.status{font-size:13px;color:var(--muted);margin:0 0 12px}
+
+.auth{max-width:440px;margin:8px auto 0}
+.tabs{display:flex;gap:4px;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:4px;margin-bottom:18px}
+.tabs button{flex:1;font:600 14px var(--body);border:0;border-radius:7px;padding:8px;background:none;color:var(--muted);cursor:pointer}
+.tabs button[aria-selected="true"]{background:var(--paper);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.small{font-size:13px;color:var(--muted);margin:6px 0 0}
+@media (prefers-reduced-motion:no-preference){
+  .card{animation:in .25s ease-out both}@keyframes in{from{transform:translateY(4px)}to{transform:none}}
+  .reveal .card{animation:pop .45s cubic-bezier(.2,.9,.3,1.2) both}@keyframes pop{from{transform:scale(.96) rotate(-1deg)}to{transform:none}}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <p class="eyebrow">Wichteln auf Distanz · Weihnachten 2026</p>
+      <h1>Wichtel-<em>Wunschzettel</em></h1>
+      <p class="lede">Wir sehen uns vor Weihnachten nicht, wichteln aber trotzdem. Trag dich bis am 30. November mit 3 bis 5 Wünschen ein und füg am besten gleich den Link zum Produkt ein. Das Geschenk kostet insgesamt 50 bis 75 Franken, also höchstens 75 CHF. Am 1. Dezember wird ausgelost, und alle sehen hier geheim, wen sie beschenken.</p>
+    </div>
+    <div class="stamp" aria-label="Budget insgesamt 50 bis 75 Franken, höchstens 75"><b>50–75</b><span>CHF total · max. 75</span></div>
+  </header>
+
+  <div id="setup" class="note alert" hidden>Die Seite ist noch nicht mit Firebase verbunden. Trag die Werte in <code>firebase-config.js</code> ein (siehe ANLEITUNG.md).</div>
+
+  <!-- Anmelden / Registrieren -->
+  <section id="auth" class="panel auth" hidden aria-labelledby="auth-title">
+    <h2 id="auth-title" style="margin-bottom:14px">Mitmachen</h2>
+    <div class="tabs" role="tablist">
+      <button type="button" role="tab" id="tab-login" aria-selected="true">Anmelden</button>
+      <button type="button" role="tab" id="tab-register" aria-selected="false">Neu registrieren</button>
+    </div>
+    <form id="auth-form" novalidate>
+      <div class="field" id="f-display" hidden>
+        <label for="a-name">Dein Name</label>
+        <input id="a-name" maxlength="60" autocomplete="name" placeholder="z. B. Lea">
+      </div>
+      <div class="field">
+        <label for="a-user">Benutzername</label>
+        <input id="a-user" maxlength="20" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="z. B. lea">
+      </div>
+      <div class="field">
+        <label for="a-pass">Passwort</label>
+        <input id="a-pass" type="password" autocomplete="current-password" placeholder="mindestens 6 Zeichen">
+      </div>
+      <div class="field" id="f-pass2" hidden>
+        <label for="a-pass2">Passwort wiederholen</label>
+        <input id="a-pass2" type="password" autocomplete="new-password">
+      </div>
+      <button type="submit" class="btn primary" id="auth-submit">Anmelden</button>
+      <p class="small" id="auth-hint">Noch kein Konto? Wähle oben «Neu registrieren».</p>
+      <p class="msg" id="auth-msg" role="status" aria-live="polite"></p>
+    </form>
+  </section>
+
+  <!-- Hauptbereich nach dem Anmelden -->
+  <main id="app" hidden>
+    <div class="userbar"><span>Angemeldet als <b id="me-user"></b></span><button type="button" class="btn ghost small" id="logout">Abmelden</button></div>
+
+    <section class="draw" id="draw" aria-live="polite">
+      <div class="when"><b id="draw-big">1.12.</b><span id="draw-small">Auslosung</span></div>
+      <div class="body">
+        <h2 id="draw-title">Auslosung am 1. Dezember</h2>
+        <p id="draw-text">Bis am 30. November um Mitternacht kannst du deinen Wunschzettel eintragen und ändern.</p>
+        <div class="ctl" id="draw-ctl"></div>
+      </div>
+    </section>
+
+    <section class="reveal" id="reveal" hidden aria-live="polite"></section>
+
+    <div class="grid">
+      <section class="panel" aria-labelledby="form-title">
+        <div class="panel-head">
+          <h2 id="form-title">Mein Wunschzettel</h2>
+          <span class="count" id="wish-count">0 / 5</span>
+        </div>
+        <div id="lock-note" class="note" hidden>Die Eintragung ist geschlossen. Dein Wunschzettel bleibt so, wie du ihn gespeichert hast.</div>
+        <form id="form" novalidate>
+          <div class="field">
+            <label for="name">Dein Name</label>
+            <input id="name" maxlength="60" autocomplete="name" placeholder="z. B. Lea">
+          </div>
+          <label>Wünsche <span style="font-weight:400;color:var(--muted)">(Titel, Link einfügen, Preis)</span></label>
+          <div class="wishes" id="wishes"></div>
+          <button type="button" class="btn ghost small" id="add-wish">+ Wunsch hinzufügen</button>
+          <div class="actions">
+            <button type="submit" class="btn primary" id="save">Wunschzettel speichern</button>
+          </div>
+          <p class="msg" id="msg" role="status" aria-live="polite"></p>
+        </form>
+      </section>
+
+      <section aria-labelledby="list-title">
+        <div class="panel-head">
+          <h2 id="list-title">Alle Wunschzettel</h2>
+          <span class="count" id="people-count"></span>
+        </div>
+        <p class="status" id="status">Wunschzettel werden geladen …</p>
+        <div class="list" id="list"></div>
+      </section>
+    </div>
+  </main>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut }
+  from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getFirestore, doc, getDoc, setDoc, deleteDoc, collection, onSnapshot }
+  from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { firebaseConfig } from "./firebase-config.js";
+
+const MIN = 3, MAX = 5, HI = 75, MIN_PEOPLE = 3;
+const DEADLINE = Date.UTC(2026, 10, 30, 23, 0, 0); // 1.12.2026, 00:00 Uhr Zürich (gleich wie in firestore.rules)
+const USER_DOMAIN = "wichtel.example.com";          // Benutzernamen werden intern zu einer Login-Adresse
+const ALG = { name: "RSA-OAEP", hash: "SHA-256" };
+const $ = (s) => document.querySelector(s);
+const wishesEl = $("#wishes"), msgEl = $("#msg");
+
+if (firebaseConfig.apiKey.startsWith("DEIN")) { $("#setup").hidden = false; throw new Error("Firebase nicht konfiguriert"); }
+const fb = initializeApp(firebaseConfig);
+const auth = getAuth(fb);
+const db = getFirestore(fb);
+
+let me = null, adminUid = null, entries = [], users = {}, draw = null;
+let privKey = null, prefilled = false, pendingDelete = null, drawing = false, drawError = "", confirmDraw = false;
+let myTarget = null, revealed = false, decryptedFor = null, unsubs = [];
+
+// ---------- helpers ----------
+function normUrl(v) {
+  v = (v || "").trim();
+  if (!v) return "";
+  if (!/^[a-z]+:\/\//i.test(v)) v = "https://" + v;
+  try { const u = new URL(v); return /^https?:$/.test(u.protocol) && u.hostname.includes(".") ? u.href : null; }
+  catch { return null; }
+}
+function domain(href) { try { return new URL(href).hostname.replace(/^www\./, ""); } catch { return ""; } }
+function guessTitle(href) {
+  try {
+    const u = new URL(href);
+    const segs = u.pathname.split("/").filter(Boolean).map((s) => decodeURIComponent(s))
+      .filter((s) => s.length > 4 && !/^[\d\W_]+$/.test(s) && !/^(product|products|produkt|artikel|item|detail)$/i.test(s));
+    let s = segs.sort((a, b) => b.length - a.length)[0] || "";
+    s = s.replace(/\.(html?|php|aspx)$/i, "").replace(/[-_+]+/g, " ").replace(/\s+\d{5,}$/, "").trim();
+    return s ? (s[0].toUpperCase() + s.slice(1)).slice(0, 90) : "";
+  } catch { return ""; }
+}
+function priceHint(p) {
+  if (p === "" || p == null) return "";
+  const n = Number(String(p).replace(",", "."));
+  if (!isFinite(n) || n <= 0) return "Bitte nur eine Zahl eintragen.";
+  if (n > HI) return `Zu teuer: Das Geschenk darf insgesamt höchstens ${HI} CHF kosten.`;
+  return "";
+}
+const say = (el, text, kind) => { el.textContent = text; el.className = "msg" + (kind ? " " + kind : ""); };
+const nameOf = (id) => entries.find((e) => e.id === id)?.name || "Unbekannt";
+const isAdmin = () => me && adminUid === me.uid;
+const isPast = () => Date.now() >= DEADLINE;
+const locked = () => !isAdmin() && (isPast() || !!draw);
+const people = () => entries.filter((e) => (e.wishes || []).length >= MIN && users[e.id]?.pub);
+function store(k, v) { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch {} }
+function recall(k) { try { return localStorage.getItem(k); } catch { return null; } }
+
+// ---------- Schlüssel: der private Teil wird mit dem Passwort verschlüsselt gespeichert ----------
+const b64 = (buf) => btoa(String.fromCharCode(...new Uint8Array(buf)));
+const unb64 = (s) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0));
+async function passKey(password, salt) {
+  const base = await crypto.subtle.importKey("raw", new TextEncoder().encode(password), "PBKDF2", false, ["deriveKey"]);
+  return crypto.subtle.deriveKey({ name: "PBKDF2", salt, iterations: 250000, hash: "SHA-256" }, base, { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]);
+}
+async function createKeys(uid, password, username) {
+  const kp = await crypto.subtle.generateKey({ ...ALG, modulusLength: 2048, publicExponent: new Uint8Array([1, 0, 1]) }, true, ["encrypt", "decrypt"]);
+  const jwk = await crypto.subtle.exportKey("jwk", kp.privateKey);
+  const salt = crypto.getRandomValues(new Uint8Array(16)), iv = crypto.getRandomValues(new Uint8Array(12));
+  const ct = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, await passKey(password, salt), new TextEncoder().encode(JSON.stringify(jwk)));
+  await setDoc(doc(db, "keys", uid), { salt: b64(salt), iv: b64(iv), ct: b64(ct) });
+  await setDoc(doc(db, "users", uid), { username, pub: { kty: "RSA", n: jwk.n, e: jwk.e, alg: jwk.alg, ext: true } });
+  privKey = await crypto.subtle.importKey("jwk", jwk, ALG, false, ["decrypt"]);
+}
+async function unlockKeys(uid, password, username) {
+  const snap = await getDoc(doc(db, "keys", uid));
+  if (!snap.exists()) return createKeys(uid, password, username);
+  const k = snap.data();
+  const pt = await crypto.subtle.decrypt({ name: "AES-GCM", iv: unb64(k.iv) }, await passKey(password, unb64(k.salt)), unb64(k.ct));
+  privKey = await crypto.subtle.importKey("jwk", JSON.parse(new TextDecoder().decode(pt)), ALG, false, ["decrypt"]);
+}
+async function encryptFor(pub, text) {
+  const k = await crypto.subtle.importKey("jwk", pub, ALG, false, ["encrypt"]);
+  return b64(await crypto.subtle.encrypt({ name: "RSA-OAEP" }, k, new TextEncoder().encode(text)));
+}
+async function decrypt(c) { return new TextDecoder().decode(await crypto.subtle.decrypt({ name: "RSA-OAEP" }, privKey, unb64(c))); }
+
+// ---------- Anmelden / Registrieren ----------
+let mode = "login";
+function setMode(m) {
+  mode = m;
+  $("#tab-login").setAttribute("aria-selected", m === "login");
+  $("#tab-register").setAttribute("aria-selected", m === "register");
+  $("#f-display").hidden = $("#f-pass2").hidden = m === "login";
+  $("#auth-submit").textContent = m === "login" ? "Anmelden" : "Konto erstellen";
+  $("#auth-hint").textContent = m === "login" ? "Noch kein Konto? Wähle oben «Neu registrieren»." : "Merk dir dein Passwort gut. Du brauchst es am 1. Dezember, um dein Wichtelkind aufzudecken.";
+  $("#a-pass").autocomplete = m === "login" ? "current-password" : "new-password";
+  say($("#auth-msg"), "");
+}
+$("#tab-login").onclick = () => setMode("login");
+$("#tab-register").onclick = () => setMode("register");
+
+const authErrors = {
+  "auth/email-already-in-use": "Dieser Benutzername ist schon vergeben. Wähle einen anderen oder melde dich an.",
+  "auth/invalid-credential": "Benutzername oder Passwort stimmt nicht.",
+  "auth/wrong-password": "Benutzername oder Passwort stimmt nicht.",
+  "auth/user-not-found": "Benutzername oder Passwort stimmt nicht.",
+  "auth/weak-password": "Das Passwort braucht mindestens 6 Zeichen.",
+  "auth/too-many-requests": "Zu viele Versuche. Bitte warte ein paar Minuten.",
+  "auth/network-request-failed": "Keine Verbindung. Prüf dein Internet.",
+  "auth/operation-not-allowed": "Die Anmeldung mit Passwort ist in Firebase noch nicht eingeschaltet (siehe ANLEITUNG.md).",
+  "auth/configuration-not-found": "Die Anmeldung mit Passwort ist in Firebase noch nicht eingeschaltet (siehe ANLEITUNG.md).",
+};
+let pendingPassword = null;
+$("#auth-form").addEventListener("submit", async (ev) => {
+  ev.preventDefault();
+  const m = $("#auth-msg");
+  const username = $("#a-user").value.trim().toLowerCase();
+  const pass = $("#a-pass").value;
+  if (!/^[a-z0-9._-]{3,20}$/.test(username)) return say(m, "Der Benutzername braucht 3 bis 20 Zeichen: Buchstaben, Zahlen, Punkt, Strich.", "err");
+  if (pass.length < 6) return say(m, "Das Passwort braucht mindestens 6 Zeichen.", "err");
+  if (mode === "register") {
+    if (!$("#a-name").value.trim()) return say(m, "Bitte gib deinen Namen ein.", "err");
+    if (pass !== $("#a-pass2").value) return say(m, "Die beiden Passwörter sind nicht gleich.", "err");
+  }
+  $("#auth-submit").disabled = true; say(m, mode === "login" ? "Anmelden …" : "Konto wird erstellt …");
+  pendingPassword = { pass, username, register: mode === "register", name: $("#a-name").value.trim() };
+  try {
+    const email = `${username}@${USER_DOMAIN}`;
+    if (mode === "register") await createUserWithEmailAndPassword(auth, email, pass);
+    else await signInWithEmailAndPassword(auth, email, pass);
+  } catch (e) {
+    pendingPassword = null;
+    say(m, authErrors[e.code] || "Das hat nicht geklappt. Bitte nochmals versuchen.", "err");
+  } finally { $("#auth-submit").disabled = false; }
+});
+$("#logout").onclick = () => signOut(auth);
+
+// ---------- Auslosung ----------
+function shuffle(a) {
+  a = [...a];
+  for (let i = a.length - 1; i > 0; i--) {
+    const r = new Uint32Array(1); crypto.getRandomValues(r);
+    const j = r[0] % (i + 1); [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+async function doDraw(force) {
+  if (drawing) return;
+  const ps = people();
+  if (ps.length < MIN_PEOPLE) { drawError = `Für die Auslosung braucht es mindestens ${MIN_PEOPLE} Personen mit vollständigem Wunschzettel.`; renderDraw(); return; }
+  drawing = true; drawError = ""; renderDraw();
+  try {
+    const ref = doc(db, "auslosung", "aktuell");
+    if (!force && (await getDoc(ref)).exists()) return;
+    // Ein einziger Kreis: niemand beschenkt sich selbst, und es gibt keine Tauschpaare
+    const order = shuffle(ps.map((p) => p.id));
+    const target = {};
+    order.forEach((g, i) => { target[g] = order[(i + 1) % order.length]; });
+    const pairs = {};
+    for (const g of [...order].sort()) pairs[g] = await encryptFor(users[g].pub, target[g]); // sortiert, damit die Reihenfolge nichts verrät
+    await setDoc(ref, { pairs, participants: [...order].sort(), drawnAt: Date.now(), by: me.uid });
+  } catch (e) {
+    // Hat jemand anderes gleichzeitig ausgelost, lehnt Firebase diesen Versuch ab; das ist in Ordnung
+    if (!(e && e.code === "permission-denied" && !force)) drawError = "Die Auslosung hat nicht geklappt. Bitte die Seite neu laden.";
+  } finally { drawing = false; renderDraw(); }
+}
+function maybeAutoDraw() {
+  if (draw || drawing || drawError || !isPast() || !me) return;
+  doDraw(false);
+}
+async function resolveDraw() {
+  const key = draw ? draw.drawnAt : null;
+  if (decryptedFor === key && (myTarget || !privKey)) { renderReveal(); return; }
+  decryptedFor = key; myTarget = null;
+  if (draw) revealed = recall("wichtel-revealed-" + me.uid) === String(draw.drawnAt);
+  if (draw && privKey && draw.pairs?.[me.uid]) {
+    try { myTarget = await decrypt(draw.pairs[me.uid]); } catch { myTarget = "error"; }
+  }
+  renderReveal(); renderDraw();
+}
+function fmtDays(ms) { const d = Math.ceil(ms / 86400000); return d <= 1 ? "letzter Tag" : `noch ${d} Tage`; }
+function renderDraw() {
+  const big = $("#draw-big"), small = $("#draw-small"), title = $("#draw-title"), text = $("#draw-text"), ctl = $("#draw-ctl");
+  ctl.innerHTML = "";
+  const n = people().length;
+  const btn = (label, fn) => { const b = document.createElement("button"); b.type = "button"; b.className = "btn small ghost"; b.textContent = label; b.onclick = fn; b.disabled = drawing; ctl.appendChild(b); };
+  const confirmBtn = (label, ask) => btn(confirmDraw ? ask : label, () => {
+    if (!confirmDraw) { confirmDraw = true; renderDraw(); setTimeout(() => { confirmDraw = false; renderDraw(); }, 5000); return; }
+    confirmDraw = false; doDraw(true);
+  });
+  if (draw) {
+    big.textContent = String(draw.participants?.length || 0); small.textContent = "ausgelost";
+    title.textContent = "Die Auslosung ist gemacht";
+    text.textContent = draw.participants?.includes(me.uid)
+      ? "Unten siehst du, wen du beschenkst. Pssst, nicht verraten! Budget insgesamt 50 bis 75 CHF, nicht mehr als 75. Das Paket schickst du direkt an die Adresse der Person."
+      : "Du warst bei der Auslosung nicht dabei. Melde dich beim Organisator, falls das ein Fehler ist.";
+    if (isAdmin()) confirmBtn("Neu auslosen", "Wirklich neu auslosen? Alle Zuteilungen ändern sich.");
+  } else if (!isPast()) {
+    big.textContent = "1.12."; small.textContent = fmtDays(DEADLINE - Date.now());
+    title.textContent = "Auslosung am 1. Dezember";
+    text.textContent = `Bis am 30. November um Mitternacht kannst du deinen Wunschzettel eintragen und ändern. Bisher ${n === 1 ? "ist 1 Person" : `sind ${n} Personen`} dabei.`;
+    if (isAdmin()) confirmBtn("Jetzt schon auslosen", "Wirklich jetzt auslosen? Danach ist die Eintragung zu.");
+  } else {
+    big.textContent = "1.12."; small.textContent = "heute";
+    title.textContent = drawing ? "Es wird ausgelost …" : "Die Eintragung ist geschlossen";
+    text.textContent = drawError || (drawing ? "Einen Moment, die Zettel werden gemischt." : "Die Auslosung startet automatisch, sobald jemand aus der Runde die Seite öffnet.");
+    if (isAdmin() && !drawing) btn("Jetzt auslosen", () => doDraw(true));
+  }
+  if (drawError && draw) { const p = document.createElement("p"); p.textContent = drawError; ctl.appendChild(p); }
+}
+function renderReveal() {
+  const el = $("#reveal");
+  el.innerHTML = "";
+  if (!draw || !draw.pairs?.[me?.uid]) { el.hidden = true; return; }
+  el.hidden = false;
+  if (myTarget === "error") {
+    el.innerHTML = '<div class="note alert">Deine Zuteilung liess sich nicht entschlüsseln. Melde dich ab und mit deinem Passwort wieder an.</div>';
+    return;
+  }
+  if (!privKey) {
+    // Nach einem Neuladen ist der Schlüssel nicht mehr im Speicher: einmal Passwort eingeben
+    const f = document.createElement("form"); f.className = "unlock"; f.noValidate = true;
+    f.innerHTML = '<div class="field"><label for="unlock-pass">Passwort eingeben, um dein Wichtelkind aufzudecken</label><input id="unlock-pass" type="password" autocomplete="current-password"></div><button type="submit" class="btn primary">Aufdecken</button><p class="msg" id="unlock-msg" style="flex-basis:100%"></p>';
+    f.onsubmit = async (ev) => {
+      ev.preventDefault();
+      try { await unlockKeys(me.uid, f.querySelector("input").value, users[me.uid]?.username || ""); revealed = true; store("wichtel-revealed-" + me.uid, String(draw.drawnAt)); decryptedFor = null; resolveDraw(); }
+      catch { say(f.querySelector("#unlock-msg"), "Das Passwort stimmt nicht.", "err"); }
+    };
+    el.appendChild(f);
+    return;
+  }
+  if (!myTarget) return;
+  if (!revealed) {
+    const b = document.createElement("button"); b.type = "button"; b.className = "btn primary"; b.textContent = "Mein Wichtelkind aufdecken";
+    b.onclick = () => { revealed = true; store("wichtel-revealed-" + me.uid, String(draw.drawnAt)); renderReveal(); };
+    el.appendChild(b);
+    return;
+  }
+  const en = entries.find((e) => e.id === myTarget);
+  if (en) el.appendChild(wishCard(en, { reveal: true }));
+  else { const d = document.createElement("div"); d.className = "card"; d.textContent = "Diese Person hat ihren Wunschzettel gelöscht. Melde dich beim Organisator."; el.appendChild(d); }
+}
+
+// ---------- Formular ----------
+function addRow(w = {}) {
+  const i = wishesEl.children.length;
+  const row = document.createElement("div");
+  row.className = "wish";
+  row.innerHTML = `
+    <span class="num"></span>
+    <input class="title" aria-label="Wunsch" placeholder="Was wünschst du dir?" maxlength="120">
+    <div class="price"><input class="pr" inputmode="decimal" aria-label="Preis in CHF" placeholder="60"></div>
+    <button type="button" class="iconbtn rm" aria-label="Wunsch entfernen">×</button>
+    <input class="link" type="url" inputmode="url" aria-label="Link zum Produkt" placeholder="Link einfügen, z. B. https://www.galaxus.ch/…">
+    <p class="hint" hidden></p>`;
+  const t = row.querySelector(".title"), l = row.querySelector(".link"), p = row.querySelector(".pr"), h = row.querySelector(".hint");
+  t.id = "w-title-" + i; l.id = "w-link-" + i; p.id = "w-price-" + i;
+  t.value = w.title || ""; l.value = w.link || ""; p.value = w.price ?? "";
+  const showHint = () => { const s = priceHint(p.value); h.textContent = s; h.hidden = !s; };
+  p.addEventListener("input", showHint);
+  l.addEventListener("input", () => l.removeAttribute("aria-invalid"));
+  // Link einfügen: fehlenden Titel aus der Produkt-URL vorschlagen
+  l.addEventListener("paste", () => setTimeout(() => {
+    const href = normUrl(l.value);
+    if (href && !t.value.trim()) t.value = guessTitle(href);
+    updateCount();
+  }));
+  t.addEventListener("input", updateCount);
+  row.querySelector(".rm").addEventListener("click", () => { row.remove(); renumber(); });
+  wishesEl.appendChild(row);
+  showHint(); renumber();
+}
+function renumber() {
+  [...wishesEl.children].forEach((r, i) => { r.querySelector(".num").textContent = String(i + 1).padStart(2, "0"); });
+  applyLock();
+}
+function updateCount() {
+  const n = [...wishesEl.querySelectorAll(".title")].filter((x) => x.value.trim()).length;
+  $("#wish-count").textContent = `${n} / ${MAX}`;
+}
+function fillForm(entry) {
+  wishesEl.innerHTML = "";
+  $("#name").value = entry?.name || "";
+  (entry?.wishes || []).slice(0, MAX).forEach((w) => addRow(w));
+  while (wishesEl.children.length < MIN) addRow();
+  say(msgEl, "");
+}
+function applyLock() {
+  const l = locked();
+  document.querySelectorAll("#form input").forEach((i) => (i.disabled = l));
+  $("#save").disabled = l;
+  $("#add-wish").disabled = l || wishesEl.children.length >= MAX;
+  wishesEl.querySelectorAll(".rm").forEach((b) => (b.disabled = l || wishesEl.children.length <= MIN));
+  $("#lock-note").hidden = !l;
+  updateCount();
+}
+function collect() {
+  const name = $("#name").value.trim();
+  const wishes = []; let bad = false;
+  [...wishesEl.children].forEach((r) => {
+    const title = r.querySelector(".title").value.trim();
+    const lEl = r.querySelector(".link");
+    const link = normUrl(lEl.value);
+    const raw = r.querySelector(".pr").value.trim().replace(",", ".");
+    if (link === null) { lEl.setAttribute("aria-invalid", "true"); bad = true; }
+    if (!title && !link) return;
+    const price = raw && isFinite(Number(raw)) ? Math.round(Number(raw) * 100) / 100 : null;
+    wishes.push({ title: title || (link ? guessTitle(link) || domain(link) : ""), link: link || "", price });
+  });
+  return { name, wishes, bad };
+}
+$("#add-wish").addEventListener("click", () => { if (wishesEl.children.length < MAX) { addRow(); wishesEl.lastElementChild.querySelector(".title").focus(); } });
+$("#form").addEventListener("submit", async (ev) => {
+  ev.preventDefault();
+  if (!me || locked()) return;
+  const { name, wishes, bad } = collect();
+  $("#name").setAttribute("aria-invalid", name ? "false" : "true");
+  if (!name) return say(msgEl, "Bitte gib deinen Namen ein.", "err");
+  if (bad) return say(msgEl, "Ein Link sieht nicht gültig aus. Am besten die Adresse direkt aus dem Browser kopieren und einfügen.", "err");
+  if (wishes.length < MIN) return say(msgEl, `Bitte mindestens ${MIN} Wünsche eintragen (aktuell ${wishes.length}).`, "err");
+  $("#save").disabled = true; say(msgEl, "Wird gespeichert …");
+  try {
+    await setDoc(doc(db, "wichtel", me.uid), { name, wishes: wishes.slice(0, MAX), updatedAt: Date.now() });
+    say(msgEl, "Gespeichert. Am 1. Dezember siehst du hier, wen du beschenkst.", "ok");
+  } catch (e) {
+    say(msgEl, e?.code === "permission-denied" ? "Die Eintragung ist geschlossen." : "Speichern hat nicht geklappt. Bitte in einem Moment nochmals versuchen.", "err");
+  } finally { applyLock(); }
+});
+
+// ---------- Liste ----------
+function wishCard(en, opts = {}) {
+  const mine = me && en.id === me.uid;
+  const card = document.createElement("article");
+  card.className = "card" + (mine && !opts.reveal ? " me" : "");
+  if (opts.reveal) { const k = document.createElement("p"); k.className = "kicker"; k.textContent = "Du beschenkst"; card.appendChild(k); }
+  const head = document.createElement("div"); head.className = "card-head";
+  const h = document.createElement("h3"); h.textContent = en.name || "Ohne Namen"; head.appendChild(h);
+  if (mine && !opts.reveal) { const c = document.createElement("span"); c.className = "chip"; c.textContent = "Du"; head.appendChild(c); }
+  if (!opts.reveal && isAdmin() && !mine) {
+    const tools = document.createElement("div"); tools.className = "tools";
+    const del = document.createElement("button"); del.type = "button"; del.className = "btn ghost small";
+    del.textContent = pendingDelete === en.id ? "Wirklich löschen?" : "Löschen";
+    del.onclick = async () => {
+      if (pendingDelete !== en.id) { pendingDelete = en.id; render(); setTimeout(() => { if (pendingDelete === en.id) { pendingDelete = null; render(); } }, 4000); return; }
+      pendingDelete = null;
+      try { await deleteDoc(doc(db, "wichtel", en.id)); } catch { say(msgEl, "Löschen hat nicht geklappt.", "err"); }
+    };
+    tools.appendChild(del); head.appendChild(tools);
+  }
+  card.appendChild(head);
+  const ol = document.createElement("ol");
+  for (const w of en.wishes || []) {
+    const li = document.createElement("li");
+    const href = w.link && normUrl(w.link);
+    const t = document.createElement(href ? "a" : "span"); t.className = "t"; t.textContent = w.title || domain(href) || "Wunsch";
+    if (href) { t.href = href; t.target = "_blank"; t.rel = "noopener noreferrer"; }
+    const p = document.createElement("span"); p.className = "p"; p.textContent = w.price != null ? `${Number(w.price).toFixed(2).replace(/\.00$/, ".–")} CHF` : "";
+    li.append(t, p);
+    if (href) { const d = document.createElement("span"); d.className = "d"; d.textContent = domain(href); li.appendChild(d); }
+    ol.appendChild(li);
+  }
+  card.appendChild(ol);
+  return card;
+}
+function render() {
+  const list = $("#list");
+  list.innerHTML = "";
+  const sorted = [...entries].sort((a, b) => (a.name || "").localeCompare(b.name || "", "de"));
+  $("#people-count").textContent = sorted.length ? `${sorted.length} ${sorted.length === 1 ? "Person" : "Personen"}` : "";
+  if (!sorted.length) {
+    const e = document.createElement("div"); e.className = "empty";
+    e.innerHTML = "<b>Noch niemand eingetragen</b>Sobald jemand den Wunschzettel speichert, erscheint er hier für alle.";
+    list.appendChild(e);
+  } else for (const en of sorted) list.appendChild(wishCard(en));
+  renderDraw(); renderReveal(); applyLock();
+}
+
+// ---------- Start ----------
+fillForm(null);
+setMode("login");
+onAuthStateChanged(auth, async (u) => {
+  unsubs.forEach((f) => f()); unsubs = [];
+  me = u; privKey = null; prefilled = false; decryptedFor = null; myTarget = null; entries = []; draw = null;
+  $("#auth").hidden = !!u; $("#app").hidden = !u;
+  if (!u) { fillForm(null); return; }
+  $("#me-user").textContent = u.email.split("@")[0];
+
+  // Direkt nach Login oder Registrierung den Schlüssel mit dem Passwort entsperren
+  const pp = pendingPassword; pendingPassword = null;
+  if (pp) {
+    try {
+      if (pp.register) await createKeys(u.uid, pp.pass, pp.username);
+      else await unlockKeys(u.uid, pp.pass, pp.username);
+    } catch { /* wird beim Aufdecken nochmals versucht */ }
+    if (pp.register && pp.name) $("#name").value = pp.name;
+    $("#a-pass").value = $("#a-pass2").value = "";
+  }
+
+  // Wer sich als Erstes registriert, wird Organisator
+  try {
+    const a = await getDoc(doc(db, "config", "admin"));
+    if (a.exists()) adminUid = a.data().uid;
+    else { await setDoc(doc(db, "config", "admin"), { uid: u.uid }); adminUid = u.uid; }
+  } catch {}
+
+  const timer = setTimeout(() => { $("#status").textContent = "Die Wunschzettel lassen sich gerade nicht laden. Prüf deine Verbindung."; }, 10000);
+  unsubs.push(onSnapshot(collection(db, "wichtel"), (snap) => {
+    clearTimeout(timer); $("#status").textContent = "";
+    entries = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    if (!prefilled) {
+      const mine = entries.find((e) => e.id === u.uid);
+      const touched = [...wishesEl.querySelectorAll("input")].some((i) => i.value.trim());
+      if (mine && !touched) fillForm(mine);
+      prefilled = true;
+    }
+    render(); maybeAutoDraw();
+  }, () => { clearTimeout(timer); $("#status").textContent = "Die Wunschzettel konnten nicht geladen werden. Lade die Seite später neu."; }));
+  unsubs.push(onSnapshot(collection(db, "users"), (snap) => {
+    users = Object.fromEntries(snap.docs.map((d) => [d.id, d.data()]));
+    renderDraw();
+  }));
+  unsubs.push(onSnapshot(doc(db, "auslosung", "aktuell"), (s) => {
+    draw = s.exists() ? s.data() : null;
+    render(); resolveDraw(); maybeAutoDraw();
+  }));
+});
+
+// Countdown aktuell halten und um Mitternacht automatisch auslosen
+setInterval(() => { if (!me) return; renderDraw(); applyLock(); maybeAutoDraw(); }, 30000);
+</script>
+</body>
+</html>

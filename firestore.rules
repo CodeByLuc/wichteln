@@ -1,0 +1,54 @@
+rules_version = '2';
+
+// Frist: 1. Dezember 2026, 00:00 Uhr Zürich (= 30.11.2026, 23:00 UTC)
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function deadline() { return timestamp.value(1796079600000); }
+    function adminDoc() { return /databases/$(database)/documents/config/admin; }
+    function isAdmin() {
+      return signedIn() && exists(adminDoc()) && get(adminDoc()).data.uid == request.auth.uid;
+    }
+    function drawn() { return exists(/databases/$(database)/documents/auslosung/aktuell); }
+    function open() { return request.time < deadline() && !drawn(); }
+
+    // Wer sich als Erstes registriert, wird Organisator
+    match /config/admin {
+      allow read: if signedIn();
+      allow create: if signedIn() && request.resource.data.uid == request.auth.uid;
+    }
+
+    // Öffentlicher Schlüssel und Benutzername jeder Person
+    match /users/{uid} {
+      allow read: if signedIn();
+      allow create, update: if signedIn() && request.auth.uid == uid;
+    }
+
+    // Privater Schlüssel, mit dem Passwort verschlüsselt; nur die Person selbst
+    match /keys/{uid} {
+      allow read, create, update: if signedIn() && request.auth.uid == uid;
+    }
+
+    // Wunschzettel: alle Angemeldeten lesen, jede Person schreibt nur ihren eigenen
+    match /wichtel/{uid} {
+      allow read: if signedIn();
+      allow create, update: if signedIn() && request.auth.uid == uid
+        && (open() || isAdmin())
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0
+        && request.resource.data.name.size() <= 60
+        && request.resource.data.wishes is list
+        && request.resource.data.wishes.size() >= 3
+        && request.resource.data.wishes.size() <= 5;
+      allow delete: if (signedIn() && request.auth.uid == uid && open()) || isAdmin();
+    }
+
+    // Auslosung: ab der Frist darf sie jede angemeldete Person einmal anlegen,
+    // vorher und für "Neu auslosen" nur der Organisator
+    match /auslosung/{d} {
+      allow read: if signedIn();
+      allow create: if signedIn() && (isAdmin() || request.time >= deadline());
+      allow update, delete: if isAdmin();
+    }
+  }
+}
