@@ -126,7 +126,7 @@ input[aria-invalid="true"]{border-color:var(--accent)}
     <div>
       <p class="eyebrow">Wichteln auf Distanz · Weihnachten 2026</p>
       <h1>Wichtel-<em>Wunschzettel</em></h1>
-      <p class="lede">Wir sehen uns vor Weihnachten nicht, wichteln aber trotzdem. Trag dich bis am 30. November mit 3 bis 5 Wünschen ein und füg am besten gleich den Link zum Produkt ein. Das Geschenk kostet insgesamt 50 bis 75 Franken, also höchstens 75 CHF. Am 1. Dezember wird ausgelost, und alle sehen hier geheim, wen sie beschenken.</p>
+      <p class="lede">Wir sehen uns vor Weihnachten nicht, wichteln aber trotzdem. Trag dich mit 3 bis 5 Wünschen ein und füg am besten gleich den Link zum Produkt ein. Das Geschenk kostet insgesamt 50 bis 75 Franken, also höchstens 75 CHF. Am 27. November wird ausgelost, und alle sehen hier geheim, wen sie beschenken.</p>
     </div>
     <div class="stamp" aria-label="Budget insgesamt 50 bis 75 Franken, höchstens 75"><b>50–75</b><span>CHF total · max. 75</span></div>
   </header>
@@ -168,10 +168,10 @@ input[aria-invalid="true"]{border-color:var(--accent)}
     <div class="userbar"><span>Angemeldet als <b id="me-user"></b></span><button type="button" class="btn ghost small" id="logout">Abmelden</button></div>
 
     <section class="draw" id="draw" aria-live="polite">
-      <div class="when"><b id="draw-big">1.12.</b><span id="draw-small">Auslosung</span></div>
+      <div class="when"><b id="draw-big">27.11.</b><span id="draw-small">Auslosung</span></div>
       <div class="body">
-        <h2 id="draw-title">Auslosung am 1. Dezember</h2>
-        <p id="draw-text">Bis am 30. November um Mitternacht kannst du deinen Wunschzettel eintragen und ändern.</p>
+        <h2 id="draw-title">Auslosung am 27. November</h2>
+        <p id="draw-text">Bis am 27. November um 14 Uhr kannst du deinen Wunschzettel eintragen und ändern.</p>
         <div class="ctl" id="draw-ctl"></div>
       </div>
     </section>
@@ -221,7 +221,7 @@ import { getFirestore, doc, getDoc, setDoc, deleteDoc, collection, onSnapshot }
 import { firebaseConfig } from "./firebase-config.js";
 
 const MIN = 3, MAX = 5, HI = 75, MIN_PEOPLE = 3;
-const DEADLINE = Date.UTC(2026, 10, 30, 23, 0, 0); // 1.12.2026, 00:00 Uhr Zürich (gleich wie in firestore.rules)
+const DEADLINE = Date.UTC(2026, 10, 27, 13, 0, 0); // 27.11.2026, 14:00 Uhr Zürich (gleich wie in firestore.rules)
 const USER_DOMAIN = "wichtel.example.com";          // Benutzernamen werden intern zu einer Login-Adresse
 const ALG = { name: "RSA-OAEP", hash: "SHA-256" };
 const $ = (s) => document.querySelector(s);
@@ -308,7 +308,7 @@ function setMode(m) {
   $("#tab-register").setAttribute("aria-selected", m === "register");
   $("#f-display").hidden = $("#f-pass2").hidden = m === "login";
   $("#auth-submit").textContent = m === "login" ? "Anmelden" : "Konto erstellen";
-  $("#auth-hint").textContent = m === "login" ? "Noch kein Konto? Wähle oben «Neu registrieren»." : "Merk dir dein Passwort gut. Du brauchst es am 1. Dezember, um dein Wichtelkind aufzudecken.";
+  $("#auth-hint").textContent = m === "login" ? "Noch kein Konto? Wähle oben «Neu registrieren»." : "Merk dir dein Passwort gut. Du brauchst es nach der Auslosung, um dein Wichtelkind aufzudecken.";
   $("#a-pass").autocomplete = m === "login" ? "current-password" : "new-password";
   say($("#auth-msg"), "");
 }
@@ -412,12 +412,12 @@ function renderDraw() {
       : "Du warst bei der Auslosung nicht dabei. Melde dich beim Organisator, falls das ein Fehler ist.";
     if (isAdmin()) confirmBtn("Neu auslosen", "Wirklich neu auslosen? Alle Zuteilungen ändern sich.");
   } else if (!isPast()) {
-    big.textContent = "1.12."; small.textContent = fmtDays(DEADLINE - Date.now());
-    title.textContent = "Auslosung am 1. Dezember";
-    text.textContent = `Bis am 30. November um Mitternacht kannst du deinen Wunschzettel eintragen und ändern. Bisher ${n === 1 ? "ist 1 Person" : `sind ${n} Personen`} dabei.`;
+    big.textContent = "27.11."; small.textContent = fmtDays(DEADLINE - Date.now());
+    title.textContent = "Auslosung am 27. November";
+    text.textContent = `Bis am 27. November um 14 Uhr kannst du deinen Wunschzettel eintragen und ändern. Bisher ${n === 1 ? "ist 1 Person" : `sind ${n} Personen`} dabei.`;
     if (isAdmin()) confirmBtn("Jetzt schon auslosen", "Wirklich jetzt auslosen? Danach ist die Eintragung zu.");
   } else {
-    big.textContent = "1.12."; small.textContent = "heute";
+    big.textContent = "27.11."; small.textContent = "heute";
     title.textContent = drawing ? "Es wird ausgelost …" : "Die Eintragung ist geschlossen";
     text.textContent = drawError || (drawing ? "Einen Moment, die Zettel werden gemischt." : "Die Auslosung startet automatisch, sobald jemand aus der Runde die Seite öffnet.");
     if (isAdmin() && !drawing) btn("Jetzt auslosen", () => doDraw(true));
@@ -537,7 +537,7 @@ $("#form").addEventListener("submit", async (ev) => {
   $("#save").disabled = true; say(msgEl, "Wird gespeichert …");
   try {
     await setDoc(doc(db, "wichtel", me.uid), { name, wishes: wishes.slice(0, MAX), updatedAt: Date.now() });
-    say(msgEl, "Gespeichert. Am 1. Dezember siehst du hier, wen du beschenkst.", "ok");
+    say(msgEl, "Gespeichert. Nach der Auslosung siehst du hier, wen du beschenkst.", "ok");
   } catch (e) {
     say(msgEl, e?.code === "permission-denied" ? "Die Eintragung ist geschlossen." : "Speichern hat nicht geklappt. Bitte in einem Moment nochmals versuchen.", "err");
   } finally { applyLock(); }
